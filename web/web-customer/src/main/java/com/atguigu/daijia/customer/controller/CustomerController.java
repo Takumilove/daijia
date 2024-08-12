@@ -2,14 +2,12 @@ package com.atguigu.daijia.customer.controller;
 
 import com.atguigu.daijia.common.result.Result;
 import com.atguigu.daijia.customer.service.CustomerService;
+import com.atguigu.daijia.model.vo.customer.CustomerLoginVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @Tag(name = "客户API接口管理")
@@ -20,6 +18,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class CustomerController {
 
     private final CustomerService customerInfoService;
+
+
+    @Operation(summary = "获取客户登录信息")
+    @GetMapping("/getCustomerLoginInfo")
+    public Result<CustomerLoginVo> getCustomerLoginInfo(@RequestHeader(value = "token") String token) {
+        // 1.从请求头获取token字符串
+        // HttpServletRequest request
+        // String token = request.getHeader("token");
+        // 调用service
+        CustomerLoginVo customerLoginVo = customerInfoService.getCustomerLoginInfo(token);
+        return Result.ok(customerLoginVo);
+    }
 
     @Operation(summary = "小程序授权登录")
     @GetMapping("/login/{code}")

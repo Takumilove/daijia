@@ -6,10 +6,12 @@ import com.atguigu.daijia.common.result.Result;
 import com.atguigu.daijia.common.result.ResultCodeEnum;
 import com.atguigu.daijia.customer.client.CustomerInfoFeignClient;
 import com.atguigu.daijia.customer.service.CustomerService;
+import com.atguigu.daijia.model.vo.customer.CustomerLoginVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +25,7 @@ public class CustomerServiceImpl implements CustomerService {
     // 注入远程调用接口
     private final CustomerInfoFeignClient client;
     private final RedisTemplate redisTemplate;
+    private final CustomerInfoFeignClient customerInfoFeignClient;
 
     @Override
     public String login(String code) {
@@ -50,5 +53,28 @@ public class CustomerServiceImpl implements CustomerService {
                                         TimeUnit.SECONDS);
         // 7.返回token字符串
         return token;
+    }
+
+    @Override
+    public CustomerLoginVo getCustomerLoginInfo(String token) {
+        // 2.根据token去redis查询
+        // 3.查询出token在redis里面对应的用户id
+        String customerId = (String) redisTemplate.opsForValue().get(RedisConstant.USER_LOGIN_KEY_PREFIX + token);
+        if (!StringUtils.hasText(customerId)) {
+            throw new GuiguException(ResultCodeEnum.DATA_ERROR);
+        }
+        // 4.根据用户id查询用户信息，远程调用
+        Result<CustomerLoginVo> customerLoginVoResult = customerInfoFeignClient.getCustomerLoginInfo(
+                Long.valueOf(customerId));
+        Integer code = customerLoginVoResult.getCode();
+        if (code != 200) {
+            throw new GuiguException(ResultCodeEnum.DATA_ERROR);
+        }
+        CustomerLoginVo customerLoginVo = customerLoginVoResult.getData();
+        if (customerLoginVo == null) {
+            throw new GuiguException(ResultCodeEnum.DATA_ERROR);
+        }
+        // 5.返回用户信息
+        return customerLoginVo;
     }
 }
