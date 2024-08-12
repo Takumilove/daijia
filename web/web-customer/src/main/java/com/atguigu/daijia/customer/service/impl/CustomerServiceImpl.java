@@ -6,6 +6,7 @@ import com.atguigu.daijia.common.result.Result;
 import com.atguigu.daijia.common.result.ResultCodeEnum;
 import com.atguigu.daijia.customer.client.CustomerInfoFeignClient;
 import com.atguigu.daijia.customer.service.CustomerService;
+import com.atguigu.daijia.model.form.customer.UpdateWxPhoneForm;
 import com.atguigu.daijia.model.vo.customer.CustomerLoginVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,10 +48,8 @@ public class CustomerServiceImpl implements CustomerService {
         String token = UUID.randomUUID().toString().replaceAll("-", "");
         // 6.把用户id放到Redis，设置过期时间
         // key:token value:customerId
-        redisTemplate.opsForValue().set(RedisConstant.USER_LOGIN_KEY_PREFIX + token,
-                                        customerId.toString(),
-                                        RedisConstant.USER_LOGIN_KEY_TIMEOUT,
-                                        TimeUnit.SECONDS);
+        redisTemplate.opsForValue().set(RedisConstant.USER_LOGIN_KEY_PREFIX + token, customerId.toString(),
+                                        RedisConstant.USER_LOGIN_KEY_TIMEOUT, TimeUnit.SECONDS);
         // 7.返回token字符串
         return token;
     }
@@ -77,4 +76,21 @@ public class CustomerServiceImpl implements CustomerService {
         // 5.返回用户信息
         return customerLoginVo;
     }
+
+    @Override
+    public CustomerLoginVo getCustomerInfo(Long customerId) {
+        // 4.根据用户id查询用户信息，远程调用
+        Result<CustomerLoginVo> customerLoginVoResult = customerInfoFeignClient.getCustomerLoginInfo(customerId);
+        Integer code = customerLoginVoResult.getCode();
+        if (code != 200) {
+            throw new GuiguException(ResultCodeEnum.DATA_ERROR);
+        }
+        CustomerLoginVo customerLoginVo = customerLoginVoResult.getData();
+        if (customerLoginVo == null) {
+            throw new GuiguException(ResultCodeEnum.DATA_ERROR);
+        }
+        // 5.返回用户信息
+        return customerLoginVo;
+    }
+
 }
