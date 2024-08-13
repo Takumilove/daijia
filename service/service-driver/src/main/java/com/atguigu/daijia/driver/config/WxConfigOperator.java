@@ -1,4 +1,4 @@
-package com.atguigu.daijia.config;
+package com.atguigu.daijia.driver.config;
 
 import cn.binarywang.wx.miniapp.api.WxMaService;
 import cn.binarywang.wx.miniapp.api.impl.WxMaServiceImpl;

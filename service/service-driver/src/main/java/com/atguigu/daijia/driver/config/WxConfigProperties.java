@@ -1,4 +1,4 @@
-package com.atguigu.daijia.config;
+package com.atguigu.daijia.driver.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
