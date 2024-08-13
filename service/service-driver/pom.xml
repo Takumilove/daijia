@@ -18,6 +18,10 @@
             <groupId>com.github.binarywang</groupId>
             <artifactId>weixin-java-miniapp</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.qcloud</groupId>
+            <artifactId>cos_api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
