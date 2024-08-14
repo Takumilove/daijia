@@ -32,7 +32,8 @@ public class CosServiceImpl implements CosService {
 
     @Override
     public CosUploadVo upload(MultipartFile file, String path) {
-        COSClient cosClient = getCosClient();
+        // 获取cosClient对象
+        COSClient cosClient = this.getCosClient();
         // 文件上传
         // 元数据信息
         ObjectMetadata meta = new ObjectMetadata();
@@ -73,7 +74,7 @@ public class CosServiceImpl implements CosService {
         String secretId = tencentCloudProperties.getSecretId();
         String secretKey = tencentCloudProperties.getSecretKey();
         COSCredentials cred = new BasicCOSCredentials(secretId, secretKey);
-        // 2 设置 bucket 的地域
+        // 2 设置 bucket 的地域, COS 地域
         Region region = new Region(tencentCloudProperties.getRegion());
         ClientConfig clientConfig = new ClientConfig(region);
         // 这里建议设置使用 https 协议
@@ -83,15 +84,18 @@ public class CosServiceImpl implements CosService {
         return cosClient;
     }
 
+    // 获取临时签名URL
     @Override
     public String getImageUrl(String path) {
         if (!StringUtils.hasText(path)) {
             return "";
         }
-        COSClient cosClient = getCosClient();
-        GeneratePresignedUrlRequest request =
-                new GeneratePresignedUrlRequest(tencentCloudProperties.getBucketPrivate(),
-                                                path, HttpMethodName.GET);
+        // 获取cosclient对象
+        COSClient cosClient = this.getCosClient();
+        // GeneratePresignedUrlRequest
+        GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(tencentCloudProperties.getBucketPrivate(),
+                                                                              path, HttpMethodName.GET);
+        // 设置临时URL有效期为15分钟
         Date date = new DateTime().plusMinutes(15).toDate();
         request.setExpiration(date);
         // 调用方法获取
