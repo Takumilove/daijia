@@ -22,6 +22,11 @@
             <groupId>com.qcloud</groupId>
             <artifactId>cos_api</artifactId>
         </dependency>
+        <!-- 腾讯云VOD -->
+        <dependency>
+            <groupId>com.qcloud</groupId>
+            <artifactId>vod_api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
