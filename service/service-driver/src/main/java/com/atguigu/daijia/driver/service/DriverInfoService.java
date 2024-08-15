@@ -17,5 +17,5 @@ public interface DriverInfoService extends IService<DriverInfo> {
 
     Boolean updateDriverAuthInfo(UpdateDriverAuthInfoForm updateDriverAuthInfoForm);
 
-    Boolean createDriverFaceModel(DriverFaceModelForm driverFaceModelForm);
+    Boolean creatDriverFaceModel(DriverFaceModelForm driverFaceModelForm);
 }

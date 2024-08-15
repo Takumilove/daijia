@@ -17,6 +17,6 @@ public interface DriverService {
 
     Boolean updateDriverAuthInfo(UpdateDriverAuthInfoForm updateDriverAuthInfoForm);
 
-    Boolean createDriverFaceModel(DriverFaceModelForm driverFaceModelForm);
+    Boolean creatDriverFaceModel(DriverFaceModelForm driverFaceModelForm);
 
 }

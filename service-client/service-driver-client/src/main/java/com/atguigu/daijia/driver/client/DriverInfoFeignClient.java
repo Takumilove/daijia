@@ -55,6 +55,6 @@ public interface DriverInfoFeignClient {
      * @param driverFaceModelForm
      * @return
      */
-    @PostMapping("/driver/info/createDriverFaceModel")
-    Result<Boolean> createDriverFaceModel(@RequestBody DriverFaceModelForm driverFaceModelForm);
+    @PostMapping("/driver/info/creatDriverFaceModel")
+    Result<Boolean> creatDriverFaceModel(@RequestBody DriverFaceModelForm driverFaceModelForm);
 }

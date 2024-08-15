@@ -52,9 +52,9 @@ public class DriverInfoController {
 
     // 创建司机人脸模型
     @Operation(summary = "创建司机人脸模型")
-    @PostMapping("/createDriverFaceModel")
-    public Result<Boolean> createDriverFaceModel(@RequestBody DriverFaceModelForm driverFaceModelForm) {
-        Boolean isSuccess = driverInfoService.createDriverFaceModel(driverFaceModelForm);
+    @PostMapping("/creatDriverFaceModel")
+    public Result<Boolean> creatDriverFaceModel(@RequestBody DriverFaceModelForm driverFaceModelForm) {
+        Boolean isSuccess = driverInfoService.creatDriverFaceModel(driverFaceModelForm);
         return Result.ok(isSuccess);
     }
 }

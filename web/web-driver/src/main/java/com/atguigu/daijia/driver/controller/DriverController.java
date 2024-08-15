@@ -64,10 +64,10 @@ public class DriverController {
 
     @Operation(summary = "创建司机人脸模型")
     @GuiguLogin
-    @PostMapping("/createDriverFaceModel")
-    public Result<Boolean> createDriverFaceModel(@RequestBody DriverFaceModelForm driverFaceModelForm) {
+    @PostMapping("/creatDriverFaceModel")
+    public Result<Boolean> creatDriverFaceModel(@RequestBody DriverFaceModelForm driverFaceModelForm) {
         driverFaceModelForm.setDriverId(AuthContextHolder.getUserId());
-        return Result.ok(driverService.createDriverFaceModel(driverFaceModelForm));
+        return Result.ok(driverService.creatDriverFaceModel(driverFaceModelForm));
     }
 }
 

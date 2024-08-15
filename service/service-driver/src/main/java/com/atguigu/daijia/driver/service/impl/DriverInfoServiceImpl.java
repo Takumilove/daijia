@@ -145,7 +145,7 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
     }
 
     @Override
-    public Boolean createDriverFaceModel(DriverFaceModelForm driverFaceModelForm) {
+    public Boolean creatDriverFaceModel(DriverFaceModelForm driverFaceModelForm) {
         // 根据司机id查询司机信息
         DriverInfo driverInfo = driverInfoMapper.selectById(driverFaceModelForm.getDriverId());
         try {
@@ -164,8 +164,10 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
             IaiClient client = new IaiClient(cred, tencentCloudProperties.getRegion(), clientProfile);
             // 实例化一个请求对象,每个接口都会对应一个request对象
             CreatePersonRequest req = new CreatePersonRequest();
+            req.setGroupId(tencentCloudProperties.getPersonGroupId());
             // 设置基本信息
             req.setPersonId(String.valueOf(driverInfo.getId()));
+            req.setGender(Long.parseLong(driverInfo.getGender()));
             req.setQualityControl(4L);
             req.setUniquePersonControl(4L);
             req.setPersonName(driverInfo.getName());
