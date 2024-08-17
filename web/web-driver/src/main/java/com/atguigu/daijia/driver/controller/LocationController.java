@@ -3,7 +3,9 @@ package com.atguigu.daijia.driver.controller;
 import com.atguigu.daijia.common.login.GuiguLogin;
 import com.atguigu.daijia.common.result.Result;
 import com.atguigu.daijia.common.util.AuthContextHolder;
+import com.atguigu.daijia.driver.client.DriverInfoFeignClient;
 import com.atguigu.daijia.driver.service.LocationService;
+import com.atguigu.daijia.model.entity.driver.DriverSet;
 import com.atguigu.daijia.model.form.map.UpdateDriverLocationForm;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,7 +29,7 @@ public class LocationController {
     @GuiguLogin
     @PostMapping("/updateDriverLocation")
     public Result<Boolean> updateDriverLocation(@RequestBody UpdateDriverLocationForm updateDriverLocationForm) {
-        Long driverId = AuthContextHolder.getUserId();
+        Long driverId = AuthContextHolder.getUserId();//司机id
         updateDriverLocationForm.setDriverId(driverId);
         return Result.ok(locationService.updateDriverLocation(updateDriverLocationForm));
     }

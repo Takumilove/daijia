@@ -100,6 +100,7 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         }
     }
 
+    // 获取司机登录信息
     @Override
     public DriverLoginVo getDriverInfo(Long driverId) {
         DriverInfo driverInfo = driverInfoMapper.selectById(driverId);
@@ -113,6 +114,7 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         return driverLoginVo;
     }
 
+    // 获取司机认证信息
     @Override
     public DriverAuthInfoVo getDriverAuthInfo(Long driverId) {
         DriverInfo driverInfo = driverInfoMapper.selectById(driverId);
@@ -131,6 +133,7 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         return driverAuthInfoVo;
     }
 
+    // 更新司机认证信息
     @Override
     public Boolean updateDriverAuthInfo(UpdateDriverAuthInfoForm updateDriverAuthInfoForm) {
         // 获取司机id
@@ -144,6 +147,7 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         return update;
     }
 
+    // 创建司机人脸模型
     @Override
     public Boolean creatDriverFaceModel(DriverFaceModelForm driverFaceModelForm) {
         // 根据司机id查询司机信息
@@ -187,5 +191,14 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
             return false;
         }
         return true;
+    }
+
+    // 获取司机设置信息
+    @Override
+    public DriverSet getDriverSet(Long driverId) {
+        LambdaQueryWrapper<DriverSet> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(DriverSet::getDriverId, driverId);
+        DriverSet driverSet = driverSetMapper.selectOne(wrapper);
+        return driverSet;
     }
 }
