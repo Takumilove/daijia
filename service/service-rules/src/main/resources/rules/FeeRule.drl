@@ -12,21 +12,20 @@ global com.atguigu.daijia.model.vo.rules.FeeRuleResponse feeRuleResponse;
     00:00:00-06:59:59  19元(含3公里)
     07:00:00-23:59:59  19元(含5公里)
 */
-rule "起步价 00:00:00-06:59:59  19元(含3公里)"
+rule "起步价 00:00:00-07:00:00  19元(含3公里)"
     salience 10          //指定优先级，数值越大优先级越高，不指定的情况下由上到下执行
     no-loop true         //防止陷入死循环
     when
-        /*规则条件，到工作内存中查找FeeRuleRequest对象
-        里面出来的结果只能是ture或者false
-        $rule是绑定变量名，可以任意命名，官方推荐$符号，定义了绑定变量名，可以在then部分操作fact对象*/
-        $rule:FeeRuleRequest(startTime >= "00:00:00" && startTime <= "06:59:59")
+        $rule:FeeRuleRequest(startTime >= "00:00:00" && startTime < "07:00:00")
     then
+        //基础里程3公里
         feeRuleResponse.setBaseDistance(new BigDecimal("3.0"));
         feeRuleResponse.setBaseDistanceFee(new BigDecimal("19.0"));
+
         //3公里内里程费为0
         feeRuleResponse.setExceedDistance(new BigDecimal("0.0"));
         feeRuleResponse.setExceedDistancePrice(new BigDecimal("4.0"));
-        System.out.println("00:00:00-06:59:59 " + feeRuleResponse.getBaseDistance() + "公里，起步价:" + feeRuleResponse.getBaseDistanceFee() + "元");
+        System.out.println("00:00:00-07:00:00 " + feeRuleResponse.getBaseDistance() + "公里，起步价:" + feeRuleResponse.getBaseDistanceFee() + "元");
 end
 rule "起步价 07:00:00-23:59:59  19元(含5公里)"
     salience 10          //指定优先级，数值越大优先级越高，不指定的情况下由上到下执行

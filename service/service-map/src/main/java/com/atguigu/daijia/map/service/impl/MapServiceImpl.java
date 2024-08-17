@@ -24,7 +24,7 @@ import java.util.Map;
 public class MapServiceImpl implements MapService {
 
     private final RestTemplate restTemplate;
-    @Value("tencent.cloud.map")
+    @Value("${tencent.map.key}")
     private String key;
 
     @Override
@@ -35,19 +35,19 @@ public class MapServiceImpl implements MapService {
         String url = "https://apis.map.qq.com/ws/direction/v1/driving/?from={from}&to={to}&key={key}";
 
         // 封装参数
-        Map<String, String> map = new HashMap<>();
+        Map<String, String> map = new HashMap();
         map.put("from",
-                calculateDrivingLineForm.getStartPointLatitude() + "," + calculateDrivingLineForm.getEndPointLatitude());
+                calculateDrivingLineForm.getStartPointLatitude() + "," + calculateDrivingLineForm.getStartPointLongitude());
         map.put("to",
                 calculateDrivingLineForm.getEndPointLatitude() + "," + calculateDrivingLineForm.getEndPointLongitude());
         map.put("key", key);
 
-        // 调用接口
+        // 使用RestTemplate调用 GET
         JSONObject result = restTemplate.getForObject(url, JSONObject.class, map);
         // 处理返回结果
-        // 判断是否调用成功
+        // 判断调用是否成功
         int status = result.getIntValue("status");
-        if (status != 0) {
+        if (status != 0) {// 失败
             throw new GuiguException(ResultCodeEnum.MAP_FAIL);
         }
 
@@ -60,7 +60,6 @@ public class MapServiceImpl implements MapService {
         // 距离
         drivingLineVo.setDistance(
                 route.getBigDecimal("distance").divide(new BigDecimal(1000)).setScale(2, RoundingMode.HALF_UP));
-
         // 路线
         drivingLineVo.setPolyline(route.getJSONArray("polyline"));
 
