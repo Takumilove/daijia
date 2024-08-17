@@ -6,10 +6,12 @@ import com.atguigu.daijia.map.client.MapFeignClient;
 import com.atguigu.daijia.model.form.customer.ExpectOrderForm;
 import com.atguigu.daijia.model.form.customer.SubmitOrderForm;
 import com.atguigu.daijia.model.form.map.CalculateDrivingLineForm;
+import com.atguigu.daijia.model.form.order.OrderInfoForm;
 import com.atguigu.daijia.model.form.rules.FeeRuleRequestForm;
 import com.atguigu.daijia.model.vo.customer.ExpectOrderVo;
 import com.atguigu.daijia.model.vo.map.DrivingLineVo;
 import com.atguigu.daijia.model.vo.rules.FeeRuleResponseVo;
+import com.atguigu.daijia.order.client.OrderInfoFeignClient;
 import com.atguigu.daijia.rules.client.FeeRuleFeignClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ import java.util.Date;
 public class OrderServiceImpl implements OrderService {
     private final MapFeignClient mapFeignClient;
     private final FeeRuleFeignClient feeRuleFeignClient;
+    private final OrderInfoFeignClient orderInfoFeignClient;
 
     // 预估订单数据
     @Override
@@ -53,6 +56,35 @@ public class OrderServiceImpl implements OrderService {
     // 乘客下单
     @Override
     public Long submitOrder(SubmitOrderForm submitOrderForm) {
-        return 1L;
+        // 1.重新计算驾驶线路
+        CalculateDrivingLineForm calculateDrivingLineForm = new CalculateDrivingLineForm();
+        BeanUtils.copyProperties(submitOrderForm, calculateDrivingLineForm);
+        Result<DrivingLineVo> drivingLineVoResult = mapFeignClient.calculateDrivingLine(calculateDrivingLineForm);
+        DrivingLineVo drivingLineVo = drivingLineVoResult.getData();
+
+        FeeRuleRequestForm calculateOrderFeeForm = new FeeRuleRequestForm();
+        calculateOrderFeeForm.setDistance(drivingLineVo.getDistance());
+        calculateOrderFeeForm.setStartTime(new Date());
+        calculateOrderFeeForm.setWaitMinute(0);
+        Result<FeeRuleResponseVo> feeRuleResponseVoResult = feeRuleFeignClient.calculateOrderFee(calculateOrderFeeForm);
+        FeeRuleResponseVo feeRuleResponseVo = feeRuleResponseVoResult.getData();
+
+        // 封装数据
+        OrderInfoForm orderInfoForm = new OrderInfoForm();
+        BeanUtils.copyProperties(submitOrderForm, orderInfoForm);
+        orderInfoForm.setExpectDistance(drivingLineVo.getDistance());
+        orderInfoForm.setExpectAmount(feeRuleResponseVo.getTotalAmount());
+        Result<Long> orderInfo = orderInfoFeignClient.saveOrderInfo(orderInfoForm);
+        Long orderId = orderInfo.getData();
+
+        // TODO 查询附近可以接单的司机
+        return orderId;
+    }
+
+    // 查询订单状态
+    @Override
+    public Integer getOrderStatus(Long orderId) {
+        Result<Integer> integerResult = orderInfoFeignClient.getOrderStatus(orderId);
+        return integerResult.getData();
     }
 }

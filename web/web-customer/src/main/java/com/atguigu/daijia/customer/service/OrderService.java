@@ -10,4 +10,7 @@ public interface OrderService {
 
     // 乘客下单
     Long submitOrder(SubmitOrderForm submitOrderForm);
+
+    // 查询订单状态
+    Integer getOrderStatus(Long orderId);
 }

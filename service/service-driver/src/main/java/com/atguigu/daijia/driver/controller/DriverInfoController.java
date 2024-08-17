@@ -22,12 +22,14 @@ public class DriverInfoController {
 
     private final DriverInfoService driverInfoService;
 
+    // 小程序授权登录
     @Operation(summary = "小程序授权登录")
     @GetMapping("/login/{code}")
     public Result<Long> login(@PathVariable String code) {
         return Result.ok(driverInfoService.login(code));
     }
 
+    // 获取司机登录信息
     @Operation(summary = "获取司机登录信息")
     @GetMapping("/getDriverLoginInfo/{driverId}")
     public Result<DriverLoginVo> getDriverInfo(@PathVariable Long driverId) {
@@ -35,6 +37,7 @@ public class DriverInfoController {
         return Result.ok(driverLoginVo);
     }
 
+    // 获取司机认证信息
     @Operation(summary = "获取司机认证信息")
     @GetMapping("/getDriverAuthInfo/{driverId}")
     public Result<DriverAuthInfoVo> getDriverAuthInfo(@PathVariable Long driverId) {
