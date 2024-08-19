@@ -11,22 +11,22 @@ import lombok.Data;
 @TableName("xxl_job_log")
 public class XxlJobLog extends BaseEntity {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	@Schema(description = "任务id")
-	@TableField("job_id")
-	private Long jobId;
+    @Schema(description = "任务id")
+    @TableField("job_id")
+    private Long jobId;
 
-	@Schema(description = "任务状态    0：失败    1：成功")
-	@TableField("status")
-	private Integer status;
+    @Schema(description = "任务状态    0：失败    1：成功")
+    @TableField("status")
+    private Integer status;
 
-	@Schema(description = "失败信息")
-	@TableField("error")
-	private String error;
+    @Schema(description = "失败信息")
+    @TableField("error")
+    private String error;
 
-	@Schema(description = "耗时(单位：毫秒)")
-	@TableField("times")
-	private Integer times;
+    @Schema(description = "耗时(单位：毫秒)")
+    @TableField("times")
+    private Long times;
 
 }
