@@ -40,8 +40,7 @@ public class DriverServiceImpl implements DriverService {
         }
         String token = UUID.randomUUID().toString().replaceAll("-", "");
         redisTemplate.opsForValue().set(RedisConstant.USER_LOGIN_KEY_PREFIX + token, driverId.toString(),
-                                        RedisConstant.USER_LOGIN_KEY_TIMEOUT,
-                                        TimeUnit.SECONDS);
+                                        RedisConstant.USER_LOGIN_KEY_TIMEOUT, TimeUnit.SECONDS);
         return token;
     }
 
@@ -72,6 +71,13 @@ public class DriverServiceImpl implements DriverService {
     public Boolean creatDriverFaceModel(DriverFaceModelForm driverFaceModelForm) {
         Result<Boolean> booleanResult = driverInfoFeignClient.creatDriverFaceModel(driverFaceModelForm);
         Boolean data = booleanResult.getData();
+        return data;
+    }
+
+    @Override
+    public Boolean isFaceRecognition(Long driverId) {
+        Result<Boolean> faceRecognition = driverInfoFeignClient.isFaceRecognition(driverId);
+        Boolean data = faceRecognition.getData();
         return data;
     }
 }

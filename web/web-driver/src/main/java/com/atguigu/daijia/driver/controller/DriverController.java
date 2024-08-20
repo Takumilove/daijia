@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class DriverController {
     private final DriverService driverService;
-    private final DriverInfoFeignClient driverInfoFeignClient;
 
     @Operation(summary = "小程序授权登录")
     @GetMapping("/login/{code}")
@@ -68,6 +67,14 @@ public class DriverController {
     public Result<Boolean> creatDriverFaceModel(@RequestBody DriverFaceModelForm driverFaceModelForm) {
         driverFaceModelForm.setDriverId(AuthContextHolder.getUserId());
         return Result.ok(driverService.creatDriverFaceModel(driverFaceModelForm));
+    }
+
+    @Operation(summary = "判断司机当日是否进行过人脸识别")
+    @GuiguLogin
+    @GetMapping("/isFaceRecognition")
+    Result<Boolean> isFaceRecognition() {
+        Long driverId = AuthContextHolder.getUserId();
+        return Result.ok(driverService.isFaceRecognition(driverId));
     }
 }
 
