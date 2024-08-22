@@ -7,12 +7,15 @@ import com.atguigu.daijia.model.entity.order.OrderInfo;
 import com.atguigu.daijia.model.entity.order.OrderStatusLog;
 import com.atguigu.daijia.model.enums.OrderStatus;
 import com.atguigu.daijia.model.form.order.OrderInfoForm;
+import com.atguigu.daijia.model.vo.order.CurrentOrderInfoVo;
 import com.atguigu.daijia.order.mapper.OrderInfoMapper;
 import com.atguigu.daijia.order.mapper.OrderStatusLogMapper;
 import com.atguigu.daijia.order.service.OrderInfoService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -28,6 +31,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     private final OrderInfoMapper orderInfoMapper;
     private final OrderStatusLogMapper orderStatusLogMapper;
     private final RedisTemplate redisTemplate;
+    private final RedissonClient redissonClient;
 
     // 乘客下单
     @Override
@@ -45,8 +49,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         // 向Redis添加标示
         // 接单标示，不存在说明不在等待接单状态
         String redisKey = RedisConstant.ORDER_ACCEPT_MARK + orderInfo.getId();
-        redisTemplate.opsForValue().set(redisKey, "0",
-                                        RedisConstant.ORDER_ACCEPT_MARK_EXPIRES_TIME, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(redisKey, "0", RedisConstant.ORDER_ACCEPT_MARK_EXPIRES_TIME, TimeUnit.MINUTES);
         return orderInfo.getId();
     }
 
@@ -64,30 +67,96 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         return orderInfo.getStatus();
     }
 
+    // Redisson分布式锁
     // 司机抢单
     @Override
     public Boolean robNewOrder(Long driverId, Long orderId) {
         // 判断订单是否存在，通过Redis，减少数据库压力
         String redisKey = RedisConstant.ORDER_ACCEPT_MARK + orderId;
-        if (Boolean.FALSE.equals(redisTemplate.hasKey(redisKey))) {
+        if (!redisTemplate.hasKey(redisKey)) {
             // 抢单失败
             throw new GuiguException(ResultCodeEnum.COB_NEW_ORDER_FAIL);
         }
-        // 司机抢单
-        // 修改订单表状态值为2：已经接单
-        LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(OrderInfo::getId, orderId);
-        OrderInfo orderInfo = orderInfoMapper.selectOne(wrapper);
-        orderInfo.setStatus(OrderStatus.ACCEPTED.getStatus());
-        orderInfo.setDriverId(driverId);
-        orderInfo.setAcceptTime(new Date());
-        int rows = orderInfoMapper.updateById(orderInfo);
-        if (rows != 1) {
+        // 创建锁
+        RLock lock = redissonClient.getLock(RedisConstant.ROB_NEW_ORDER_LOCK + orderId);
+        try {
+            boolean flag = lock.tryLock(RedisConstant.ROB_NEW_ORDER_LOCK_WAIT_TIME,
+                                        RedisConstant.ROB_NEW_ORDER_LOCK_LEASE_TIME,
+                                        TimeUnit.SECONDS);            // 司机抢单
+            if (flag) {
+                if (!redisTemplate.hasKey(redisKey)) {
+                    // 抢单失败
+                    throw new GuiguException(ResultCodeEnum.COB_NEW_ORDER_FAIL);
+                }
+                // 修改订单表状态值为2：已经接单
+                LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
+                wrapper.eq(OrderInfo::getId, orderId);
+                OrderInfo orderInfo = orderInfoMapper.selectOne(wrapper);
+                orderInfo.setStatus(OrderStatus.ACCEPTED.getStatus());
+                orderInfo.setDriverId(driverId);
+                orderInfo.setAcceptTime(new Date());
+                int rows = orderInfoMapper.updateById(orderInfo);
+                if (rows != 1) {
+                    throw new GuiguException(ResultCodeEnum.COB_NEW_ORDER_FAIL);
+                }
+                // 删除Redis中的标示
+                redisTemplate.delete(redisKey);
+            }
+        } catch (Exception e) {
             throw new GuiguException(ResultCodeEnum.COB_NEW_ORDER_FAIL);
+        } finally {
+            if (lock.isLocked()) {
+                lock.unlock();
+            }
         }
-        // 删除Redis中的标示
-        redisTemplate.delete(redisKey);
         return true;
+    }
+
+    @Override
+    public CurrentOrderInfoVo searchCustomerCurrentOrder(Long customerId) {
+        LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(OrderInfo::getCustomerId, customerId);
+        Integer[] statusArray = {OrderStatus.ACCEPTED.getStatus(), OrderStatus.DRIVER_ARRIVED.getStatus(),
+                OrderStatus.UPDATE_CART_INFO.getStatus(), OrderStatus.START_SERVICE.getStatus(),
+                OrderStatus.END_SERVICE.getStatus(), OrderStatus.UNPAID.getStatus()};
+        wrapper.in(OrderInfo::getStatus, statusArray);
+
+        wrapper.orderByDesc(OrderInfo::getId);
+        wrapper.last("limit 1");
+
+        OrderInfo orderInfo = orderInfoMapper.selectOne(wrapper);
+        CurrentOrderInfoVo currentOrderInfoVo = new CurrentOrderInfoVo();
+        if (orderInfo != null) {
+            currentOrderInfoVo.setOrderId(orderInfo.getId());
+            currentOrderInfoVo.setStatus(orderInfo.getStatus());
+            currentOrderInfoVo.setIsHasCurrentOrder(true);
+        } else {
+            currentOrderInfoVo.setIsHasCurrentOrder(false);
+        }
+        return currentOrderInfoVo;
+    }
+
+    @Override
+    public CurrentOrderInfoVo searchDriverCurrentOrder(Long driverId) {
+        LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(OrderInfo::getDriverId, driverId);
+        Integer[] statusArray = {OrderStatus.ACCEPTED.getStatus(), OrderStatus.DRIVER_ARRIVED.getStatus(),
+                OrderStatus.UPDATE_CART_INFO.getStatus(), OrderStatus.START_SERVICE.getStatus(),
+                OrderStatus.END_SERVICE.getStatus()};
+        wrapper.in(OrderInfo::getStatus, statusArray);
+        wrapper.orderByDesc(OrderInfo::getId);
+        wrapper.last("limit 1");
+        OrderInfo orderInfo = orderInfoMapper.selectOne(wrapper);
+        // 封装到vo
+        CurrentOrderInfoVo currentOrderInfoVo = new CurrentOrderInfoVo();
+        if (null != orderInfo) {
+            currentOrderInfoVo.setStatus(orderInfo.getStatus());
+            currentOrderInfoVo.setOrderId(orderInfo.getId());
+            currentOrderInfoVo.setIsHasCurrentOrder(true);
+        } else {
+            currentOrderInfoVo.setIsHasCurrentOrder(false);
+        }
+        return currentOrderInfoVo;
     }
 
     // 司机抢单：乐观锁方案解决并发问题
