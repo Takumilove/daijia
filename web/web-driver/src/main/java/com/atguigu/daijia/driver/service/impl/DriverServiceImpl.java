@@ -4,8 +4,10 @@ import com.atguigu.daijia.common.constant.RedisConstant;
 import com.atguigu.daijia.common.execption.GuiguException;
 import com.atguigu.daijia.common.result.Result;
 import com.atguigu.daijia.common.result.ResultCodeEnum;
+import com.atguigu.daijia.dispatch.client.NewOrderFeignClient;
 import com.atguigu.daijia.driver.client.DriverInfoFeignClient;
 import com.atguigu.daijia.driver.service.DriverService;
+import com.atguigu.daijia.map.client.LocationFeignClient;
 import com.atguigu.daijia.model.form.driver.DriverFaceModelForm;
 import com.atguigu.daijia.model.form.driver.UpdateDriverAuthInfoForm;
 import com.atguigu.daijia.model.vo.driver.DriverAuthInfoVo;
@@ -25,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 public class DriverServiceImpl implements DriverService {
     private final DriverInfoFeignClient driverInfoFeignClient;
     private final RedisTemplate redisTemplate;
+    private final LocationFeignClient locationFeignClient;
+    private final NewOrderFeignClient newOrderFeignClient;
 
     @Override
     public String login(String code) {
@@ -46,38 +50,68 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public DriverLoginVo getDriverLoginInfo(Long driverId) {
-        Result<DriverLoginVo> loginVoResult = driverInfoFeignClient.getDriverLoginInfo(driverId);
-        DriverLoginVo driverLoginVo = loginVoResult.getData();
-        return driverLoginVo;
+        return driverInfoFeignClient.getDriverLoginInfo(driverId).getData();
     }
 
     // 获取司机认证信息
     @Override
     public DriverAuthInfoVo getDriverAuthInfo(Long driverId) {
-        Result<DriverAuthInfoVo> authInfoVoResult = driverInfoFeignClient.getDriverAuthInfo(driverId);
-        DriverAuthInfoVo driverAuthInfoVo = authInfoVoResult.getData();
-        return driverAuthInfoVo;
+        return driverInfoFeignClient.getDriverAuthInfo(driverId).getData();
     }
 
     // 更新司机认证信息
     @Override
     public Boolean updateDriverAuthInfo(UpdateDriverAuthInfoForm updateDriverAuthInfoForm) {
-        Result<Boolean> booleanResult = driverInfoFeignClient.UpdateDriverAuthInfo(updateDriverAuthInfoForm);
-        Boolean data = booleanResult.getData();
-        return data;
+        return driverInfoFeignClient.UpdateDriverAuthInfo(updateDriverAuthInfoForm).getData();
     }
 
     @Override
     public Boolean creatDriverFaceModel(DriverFaceModelForm driverFaceModelForm) {
-        Result<Boolean> booleanResult = driverInfoFeignClient.creatDriverFaceModel(driverFaceModelForm);
-        Boolean data = booleanResult.getData();
-        return data;
+        return driverInfoFeignClient.creatDriverFaceModel(driverFaceModelForm).getData();
+    }
+
+    // 是否进行过人脸识别
+    @Override
+    public Boolean isFaceRecognition(Long driverId) {
+        return driverInfoFeignClient.isFaceRecognition(driverId).getData();
+    }
+
+    // 人脸识别
+    @Override
+    public Boolean verifyDriverFace(DriverFaceModelForm driverFaceModelForm) {
+        return driverInfoFeignClient.verifyDriverFace(driverFaceModelForm).getData();
+    }
+
+    // 开始接单服务
+    @Override
+    public Boolean startService(Long driverId) {
+        // 1.判断完成认证
+        DriverLoginVo driverLoginVo = driverInfoFeignClient.getDriverLoginInfo(driverId).getData();
+        if (driverLoginVo.getAuthStatus() != 2) {
+            throw new GuiguException(ResultCodeEnum.AUTH_ERROR);
+        }
+        // 2.判断当日是否人脸识别
+        boolean isFace = driverInfoFeignClient.isFaceRecognition(driverId).getData();
+        if (!isFace) {
+            throw new GuiguException(ResultCodeEnum.FACE_ERROR);
+        }
+        // 3.更新订单状态1开始接单
+        driverInfoFeignClient.updateServiceStatus(driverId, 1);
+        // 4.删除redis司机位置信息
+        locationFeignClient.removeDriverLocation(driverId);
+        // 5.清空司机临时队列数据
+        newOrderFeignClient.clearNewOrderQueueData(driverId);
+        return true;
     }
 
     @Override
-    public Boolean isFaceRecognition(Long driverId) {
-        Result<Boolean> faceRecognition = driverInfoFeignClient.isFaceRecognition(driverId);
-        Boolean data = faceRecognition.getData();
-        return data;
+    public Boolean stopService(Long driverId) {
+        // 1.更新订单状态0停止接单
+        driverInfoFeignClient.updateServiceStatus(driverId, 0);
+        // 2.删除redis司机位置信息
+        locationFeignClient.removeDriverLocation(driverId);
+        // 3.清空司机临时队列数据
+        newOrderFeignClient.clearNewOrderQueueData(driverId);
+        return true;
     }
 }
