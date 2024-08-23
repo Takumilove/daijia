@@ -7,6 +7,7 @@ import com.atguigu.daijia.model.entity.order.OrderInfo;
 import com.atguigu.daijia.model.entity.order.OrderStatusLog;
 import com.atguigu.daijia.model.enums.OrderStatus;
 import com.atguigu.daijia.model.form.order.OrderInfoForm;
+import com.atguigu.daijia.model.form.order.UpdateOrderCartForm;
 import com.atguigu.daijia.model.vo.order.CurrentOrderInfoVo;
 import com.atguigu.daijia.order.mapper.OrderInfoMapper;
 import com.atguigu.daijia.order.mapper.OrderStatusLogMapper;
@@ -159,6 +160,42 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         return currentOrderInfoVo;
     }
 
+    @Override
+    public Boolean driverArriveStartLocation(Long orderId, Long driverId) {
+        // 更新订单状态和到达时间，条件：orderId+driverId
+        LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(OrderInfo::getId, orderId);
+        wrapper.eq(OrderInfo::getDriverId, driverId);
+        OrderInfo orderInfo = new OrderInfo();
+        orderInfo.setStatus(OrderStatus.DRIVER_ARRIVED.getStatus());
+        orderInfo.setArriveTime(new Date());
+        int rows = orderInfoMapper.update(orderInfo, wrapper);
+        if (rows == 1) {
+            this.log(orderId, OrderStatus.DRIVER_ARRIVED.getStatus());
+        } else {
+            throw new GuiguException(ResultCodeEnum.UPDATE_ERROR);
+        }
+        return true;
+    }
+
+    @Override
+    public Boolean updateOrderCart(UpdateOrderCartForm updateOrderCartForm) {
+        LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(OrderInfo::getId, updateOrderCartForm.getOrderId());
+        wrapper.eq(OrderInfo::getDriverId, updateOrderCartForm.getDriverId());
+        OrderInfo orderInfo = new OrderInfo();
+        BeanUtils.copyProperties(updateOrderCartForm, orderInfo);
+        orderInfo.setStatus(OrderStatus.UPDATE_CART_INFO.getStatus());
+
+        int rows = orderInfoMapper.update(orderInfo, wrapper);
+        if (rows == 1) {
+            this.log(updateOrderCartForm.getOrderId(), OrderStatus.UPDATE_CART_INFO.getStatus());
+        } else {
+            throw new GuiguException(ResultCodeEnum.UPDATE_ERROR);
+        }
+        return true;
+    }
+
     // 司机抢单：乐观锁方案解决并发问题
     public Boolean robNewOrder1(Long driverId, Long orderId) {
         // 判断订单是否存在，通过Redis，减少数据库压力
@@ -193,4 +230,5 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         orderStatusLog.setOperateTime(new Date());
         orderStatusLogMapper.insert(orderStatusLog);
     }
+
 }

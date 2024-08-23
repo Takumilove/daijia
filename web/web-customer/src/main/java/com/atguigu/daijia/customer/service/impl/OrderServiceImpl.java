@@ -1,9 +1,14 @@
 package com.atguigu.daijia.customer.service.impl;
 
+import com.atguigu.daijia.common.execption.GuiguException;
 import com.atguigu.daijia.common.result.Result;
+import com.atguigu.daijia.common.result.ResultCodeEnum;
 import com.atguigu.daijia.customer.service.OrderService;
 import com.atguigu.daijia.dispatch.client.NewOrderFeignClient;
+import com.atguigu.daijia.driver.client.DriverInfoFeignClient;
+import com.atguigu.daijia.map.client.LocationFeignClient;
 import com.atguigu.daijia.map.client.MapFeignClient;
+import com.atguigu.daijia.model.entity.order.OrderInfo;
 import com.atguigu.daijia.model.form.customer.ExpectOrderForm;
 import com.atguigu.daijia.model.form.customer.SubmitOrderForm;
 import com.atguigu.daijia.model.form.map.CalculateDrivingLineForm;
@@ -11,8 +16,11 @@ import com.atguigu.daijia.model.form.order.OrderInfoForm;
 import com.atguigu.daijia.model.form.rules.FeeRuleRequestForm;
 import com.atguigu.daijia.model.vo.customer.ExpectOrderVo;
 import com.atguigu.daijia.model.vo.dispatch.NewOrderTaskVo;
+import com.atguigu.daijia.model.vo.driver.DriverInfoVo;
 import com.atguigu.daijia.model.vo.map.DrivingLineVo;
+import com.atguigu.daijia.model.vo.map.OrderLocationVo;
 import com.atguigu.daijia.model.vo.order.CurrentOrderInfoVo;
+import com.atguigu.daijia.model.vo.order.OrderInfoVo;
 import com.atguigu.daijia.model.vo.rules.FeeRuleResponseVo;
 import com.atguigu.daijia.order.client.OrderInfoFeignClient;
 import com.atguigu.daijia.rules.client.FeeRuleFeignClient;
@@ -32,6 +40,8 @@ public class OrderServiceImpl implements OrderService {
     private final FeeRuleFeignClient feeRuleFeignClient;
     private final OrderInfoFeignClient orderInfoFeignClient;
     private final NewOrderFeignClient newOrderFeignClient;
+    private final DriverInfoFeignClient driverInfoFeignClient;
+    private final LocationFeignClient locationFeignClient;
 
     // 预估订单数据
     @Override
@@ -110,5 +120,38 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public CurrentOrderInfoVo searchCustomerCurrentOrder(Long customerId) {
         return orderInfoFeignClient.searchCustomerCurrentOrder(customerId).getData();
+    }
+
+    @Override
+    public OrderInfoVo getOrderInfo(Long orderId, Long customerId) {
+        OrderInfo orderInfo = orderInfoFeignClient.getOrderInfo(orderId).getData();
+        // 判断
+        if (orderInfo.getCustomerId() != customerId) {
+            throw new GuiguException(ResultCodeEnum.ILLEGAL_REQUEST);
+        }
+
+        OrderInfoVo orderInfoVo = new OrderInfoVo();
+        orderInfoVo.setOrderId(orderId);
+        BeanUtils.copyProperties(orderInfo, orderInfoVo);
+        return orderInfoVo;
+    }
+
+    @Override
+    public DriverInfoVo getDriverInfo(Long orderId, Long customerId) {
+        OrderInfo orderInfo = orderInfoFeignClient.getOrderInfo(orderId).getData();
+        if (orderInfo.getCustomerId() != customerId) {
+            throw new GuiguException(ResultCodeEnum.DATA_ERROR);
+        }
+        return driverInfoFeignClient.getDriverInfo(orderInfo.getDriverId()).getData();
+    }
+
+    @Override
+    public OrderLocationVo getCacheOrderLocation(Long orderId) {
+        return locationFeignClient.getCacheOrderLocation(orderId).getData();
+    }
+
+    @Override
+    public DrivingLineVo calculateDrivingLine(CalculateDrivingLineForm calculateDrivingLineForm) {
+        return mapFeignClient.calculateDrivingLine(calculateDrivingLineForm).getData();
     }
 }
