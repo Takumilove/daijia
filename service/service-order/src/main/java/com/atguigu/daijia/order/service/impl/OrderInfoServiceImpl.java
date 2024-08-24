@@ -7,6 +7,7 @@ import com.atguigu.daijia.model.entity.order.OrderInfo;
 import com.atguigu.daijia.model.entity.order.OrderStatusLog;
 import com.atguigu.daijia.model.enums.OrderStatus;
 import com.atguigu.daijia.model.form.order.OrderInfoForm;
+import com.atguigu.daijia.model.form.order.StartDriveForm;
 import com.atguigu.daijia.model.form.order.UpdateOrderCartForm;
 import com.atguigu.daijia.model.vo.order.CurrentOrderInfoVo;
 import com.atguigu.daijia.order.mapper.OrderInfoMapper;
@@ -194,6 +195,25 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             throw new GuiguException(ResultCodeEnum.UPDATE_ERROR);
         }
         return true;
+    }
+
+    @Override
+    public Boolean startDriver(StartDriveForm startDriveForm) {
+        // 根据订单id+司机id 更新订单状态和开始代驾时间
+        LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(OrderInfo::getId, startDriveForm.getOrderId());
+        wrapper.eq(OrderInfo::getDriverId, startDriveForm.getDriverId());
+
+        OrderInfo orderInfo = new OrderInfo();
+        orderInfo.setStatus(OrderStatus.START_SERVICE.getStatus());
+        orderInfo.setStartServiceTime(new Date());
+
+        int rows = orderInfoMapper.update(orderInfo, wrapper);
+        if (rows == 1) {
+            return true;
+        } else {
+            throw new GuiguException(ResultCodeEnum.UPDATE_ERROR);
+        }
     }
 
     // 司机抢单：乐观锁方案解决并发问题
