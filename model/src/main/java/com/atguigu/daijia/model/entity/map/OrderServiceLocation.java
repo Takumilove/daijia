@@ -13,20 +13,20 @@ import java.util.Date;
 @Document
 public class OrderServiceLocation {
 
-	@Schema(description = "id")
-	@Id
-	private String id;
+    @Schema(description = "id")
+    @Id
+    private String id;
 
-	@Schema(description = "订单id")
-	private Long orderId;
+    @Schema(description = "订单id")
+    private Long orderId;
 
-	@Schema(description = "金度")
-	private BigDecimal latitude;
+    @Schema(description = "经度")
+    private BigDecimal latitude;
 
-	@Schema(description = "纬度")
-	private BigDecimal longitude;
+    @Schema(description = "纬度")
+    private BigDecimal longitude;
 
-	@Schema(description = "创建时间")
-	private Date createTime;
+    @Schema(description = "创建时间")
+    private Date createTime;
 
 }

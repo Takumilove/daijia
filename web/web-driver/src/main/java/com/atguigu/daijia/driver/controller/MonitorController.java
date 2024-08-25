@@ -26,7 +26,6 @@ public class MonitorController {
     @Operation(summary = "上传录音")
     @PostMapping("/upload")
     public Result<Boolean> upload(@RequestParam("file") MultipartFile file, OrderMonitorForm orderMonitorForm) {
-
         return Result.ok(monitorService.upload(file, orderMonitorForm));
     }
 }
