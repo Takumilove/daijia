@@ -6,9 +6,12 @@ import com.atguigu.daijia.model.form.order.OrderInfoForm;
 import com.atguigu.daijia.model.form.order.StartDriveForm;
 import com.atguigu.daijia.model.form.order.UpdateOrderBillForm;
 import com.atguigu.daijia.model.form.order.UpdateOrderCartForm;
+import com.atguigu.daijia.model.vo.base.PageVo;
 import com.atguigu.daijia.model.vo.order.CurrentOrderInfoVo;
 import com.atguigu.daijia.order.service.OrderInfoService;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -88,5 +91,32 @@ public class OrderInfoController {
     public Result<Boolean> endDrive(@RequestBody UpdateOrderBillForm updateOrderBillForm) {
         return Result.ok(orderInfoService.endDrive(updateOrderBillForm));
     }
+
+    @Operation(summary = "获取乘客订单分页列表")
+    @GetMapping("/findCustomerOrderPage/{customerId}/{page}/{limit}")
+    public Result<PageVo> findCustomerOrderPage(@PathVariable Long customerId, @PathVariable Long page,
+                                                @PathVariable Long limit) {
+        // 创建page对象
+        Page<OrderInfo> pageParam = new Page<>(page, limit);
+        // 调用service方法实现分页条件查询
+        PageVo pageVo = orderInfoService.findCustomerOrderPage(pageParam, customerId);
+        pageVo.setPage(page);
+        pageVo.setLimit(limit);
+        return Result.ok(pageVo);
+    }
+
+    @Operation(summary = "获取司机订单分页列表")
+    @GetMapping("/findDriverOrderPage/{driverId}/{page}/{limit}")
+    public Result<PageVo> findDriverOrderPage(
+            @Parameter(name = "driverId", description = "司机id", required = true) @PathVariable Long driverId,
+            @Parameter(name = "page", description = "当前页码", required = true) @PathVariable Long page,
+            @Parameter(name = "limit", description = "每页记录数", required = true) @PathVariable Long limit) {
+        Page<OrderInfo> pageParam = new Page<>(page, limit);
+        PageVo pageVo = orderInfoService.findDriverOrderPage(pageParam, driverId);
+        pageVo.setPage(page);
+        pageVo.setLimit(limit);
+        return Result.ok(pageVo);
+    }
 }
+
 
