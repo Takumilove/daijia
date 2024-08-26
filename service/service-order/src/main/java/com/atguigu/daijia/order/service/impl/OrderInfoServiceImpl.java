@@ -10,8 +10,7 @@ import com.atguigu.daijia.model.form.order.StartDriveForm;
 import com.atguigu.daijia.model.form.order.UpdateOrderBillForm;
 import com.atguigu.daijia.model.form.order.UpdateOrderCartForm;
 import com.atguigu.daijia.model.vo.base.PageVo;
-import com.atguigu.daijia.model.vo.order.CurrentOrderInfoVo;
-import com.atguigu.daijia.model.vo.order.OrderListVo;
+import com.atguigu.daijia.model.vo.order.*;
 import com.atguigu.daijia.order.mapper.OrderBillMapper;
 import com.atguigu.daijia.order.mapper.OrderInfoMapper;
 import com.atguigu.daijia.order.mapper.OrderProfitsharingMapper;
@@ -152,8 +151,10 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     public CurrentOrderInfoVo searchDriverCurrentOrder(Long driverId) {
         LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(OrderInfo::getDriverId, driverId);
-        Integer[] statusArray = {OrderStatus.ACCEPTED.getStatus(), OrderStatus.DRIVER_ARRIVED.getStatus(),
-                                 OrderStatus.UPDATE_CART_INFO.getStatus(), OrderStatus.START_SERVICE.getStatus(),
+        Integer[] statusArray = {OrderStatus.ACCEPTED.getStatus(),
+                                 OrderStatus.DRIVER_ARRIVED.getStatus(),
+                                 OrderStatus.UPDATE_CART_INFO.getStatus(),
+                                 OrderStatus.START_SERVICE.getStatus(),
                                  OrderStatus.END_SERVICE.getStatus()};
         wrapper.in(OrderInfo::getStatus, statusArray);
         wrapper.orderByDesc(OrderInfo::getId);
@@ -283,6 +284,55 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     public PageVo findDriverOrderPage(Page<OrderInfo> pageParam, Long driverId) {
         IPage<OrderListVo> pageInfo = orderInfoMapper.selectDriverOrderPage(pageParam, driverId);
         return new PageVo<>(pageInfo.getRecords(), pageInfo.getPages(), pageInfo.getTotal());
+    }
+
+    @Override
+    public OrderBillVo getOrderBillInfo(Long orderId) {
+        LambdaQueryWrapper<OrderBill> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(OrderBill::getOrderId, orderId);
+        OrderBill orderBill = orderBillMapper.selectOne(wrapper);
+        OrderBillVo orderBillVo = new OrderBillVo();
+        BeanUtils.copyProperties(orderBill, orderBillVo);
+        return orderBillVo;
+    }
+
+    @Override
+    public OrderProfitsharingVo getOrderProfitsharing(Long orderId) {
+        LambdaQueryWrapper<OrderProfitsharing> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(OrderProfitsharing::getOrderId, orderId);
+        OrderProfitsharing orderProfitsharing = orderProfitsharingMapper.selectOne(wrapper);
+
+        OrderProfitsharingVo orderProfitsharingVo = new OrderProfitsharingVo();
+        BeanUtils.copyProperties(orderProfitsharing, orderProfitsharingVo);
+        return orderProfitsharingVo;
+    }
+
+    @Override
+    public Boolean sendOrderBillInfo(Long orderId, Long driverId) {
+        // 更新订单信息
+        LambdaQueryWrapper<OrderInfo> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(OrderInfo::getId, orderId);
+        queryWrapper.eq(OrderInfo::getDriverId, driverId);
+        // 更新字段
+        OrderInfo updateOrderInfo = new OrderInfo();
+        updateOrderInfo.setStatus(OrderStatus.UNPAID.getStatus());
+        // 只能更新自己的订单
+        int row = orderInfoMapper.update(updateOrderInfo, queryWrapper);
+        if (row == 1) {
+            return true;
+        } else {
+            throw new GuiguException(ResultCodeEnum.UPDATE_ERROR);
+        }
+    }
+
+    @Override
+    public OrderPayVo getOrderPayVo(String orderNo, Long customerId) {
+        OrderPayVo orderPayVo = orderInfoMapper.selectOrderPayVo(orderNo, customerId);
+        if (orderPayVo != null) {
+            String content = orderPayVo.getStartLocation() + " 到 " + orderPayVo.getEndLocation();
+            orderPayVo.setContent(content);
+        }
+        return orderPayVo;
     }
 
     // 司机抢单：乐观锁方案解决并发问题

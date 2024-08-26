@@ -26,7 +26,7 @@ import org.springframework.util.StringUtils;
 @SuppressWarnings({"unchecked", "rawtypes"})
 @RequiredArgsConstructor
 public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, CustomerInfo> implements
-        CustomerInfoService {
+                                                                                           CustomerInfoService {
 
     private final WxMaService wxMaService;
     private final CustomerInfoMapper customerInfoMapper;
@@ -99,5 +99,13 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         } catch (WxErrorException e) {
             throw new GuiguException(ResultCodeEnum.DATA_ERROR);
         }
+    }
+
+    @Override
+    public String getCustomerOpenId(Long customerId) {
+        LambdaQueryWrapper<CustomerInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CustomerInfo::getId, customerId);
+        CustomerInfo customerInfo = customerInfoMapper.selectOne(wrapper);
+        return customerInfo.getWxOpenId();
     }
 }

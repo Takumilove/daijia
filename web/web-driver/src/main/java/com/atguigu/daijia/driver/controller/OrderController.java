@@ -123,5 +123,13 @@ public class OrderController {
         PageVo pageVo = orderService.findDriverOrderPage(driverId, page, limit);
         return Result.ok(pageVo);
     }
+
+    @Operation(summary = "司机发送账单信息")
+    @GuiguLogin
+    @GetMapping("/sendOrderBillInfo/{orderId}")
+    public Result<Boolean> sendOrderBillInfo(@PathVariable Long orderId) {
+        Long driverId = AuthContextHolder.getUserId();
+        return Result.ok(orderService.sendOrderBillInfo(orderId, driverId));
+    }
 }
 
