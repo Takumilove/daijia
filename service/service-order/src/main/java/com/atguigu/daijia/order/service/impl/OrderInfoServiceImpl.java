@@ -151,10 +151,8 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     public CurrentOrderInfoVo searchDriverCurrentOrder(Long driverId) {
         LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(OrderInfo::getDriverId, driverId);
-        Integer[] statusArray = {OrderStatus.ACCEPTED.getStatus(),
-                                 OrderStatus.DRIVER_ARRIVED.getStatus(),
-                                 OrderStatus.UPDATE_CART_INFO.getStatus(),
-                                 OrderStatus.START_SERVICE.getStatus(),
+        Integer[] statusArray = {OrderStatus.ACCEPTED.getStatus(), OrderStatus.DRIVER_ARRIVED.getStatus(),
+                                 OrderStatus.UPDATE_CART_INFO.getStatus(), OrderStatus.START_SERVICE.getStatus(),
                                  OrderStatus.END_SERVICE.getStatus()};
         wrapper.in(OrderInfo::getStatus, statusArray);
         wrapper.orderByDesc(OrderInfo::getId);
@@ -333,6 +331,49 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             orderPayVo.setContent(content);
         }
         return orderPayVo;
+    }
+
+    @Override
+    public Boolean updateOrderPayStatus(String orderNo) {
+        // 1.根据订单编号查询，判断订单状态
+        LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(OrderInfo::getOrderNo, orderNo);
+        OrderInfo orderInfo = orderInfoMapper.selectOne(wrapper);
+        if (orderInfo == null || orderInfo.getStatus() == OrderStatus.PAID.getStatus()) {
+            return true;
+        }
+        // 2.更新状态
+        LambdaQueryWrapper<OrderInfo> updateWrapper = new LambdaQueryWrapper<>();
+        updateWrapper.eq(OrderInfo::getOrderNo, orderNo);
+        OrderInfo updateOrderInfo = new OrderInfo();
+        updateOrderInfo.setStatus(OrderStatus.PAID.getStatus());
+        updateOrderInfo.setPayTime(new Date());
+        int rows = orderInfoMapper.update(updateOrderInfo, updateWrapper);
+        if (rows == 1) {
+            return true;
+        } else {
+            throw new GuiguException(ResultCodeEnum.UPDATE_ERROR);
+        }
+    }
+
+    @Override
+    public OrderRewardVo getOrderRewardFee(String orderNo) {
+        // 根据订单编号查询订单表
+        OrderInfo orderInfo = orderInfoMapper.selectOne(
+                new LambdaQueryWrapper<OrderInfo>().eq(OrderInfo::getOrderNo, orderNo)
+                                                   .select(OrderInfo::getId, OrderInfo::getDriverId));
+
+        // 根据订单id查询系统奖励表
+        OrderBill orderBill = orderBillMapper.selectOne(
+                new LambdaQueryWrapper<OrderBill>().eq(OrderBill::getOrderId, orderInfo.getId())
+                                                   .select(OrderBill::getRewardFee));
+
+        // 封装到vo里面
+        OrderRewardVo orderRewardVo = new OrderRewardVo();
+        orderRewardVo.setOrderId(orderInfo.getId());
+        orderRewardVo.setDriverId(orderInfo.getDriverId());
+        orderRewardVo.setRewardFee(orderBill.getRewardFee());
+        return orderRewardVo;
     }
 
     // 司机抢单：乐观锁方案解决并发问题
