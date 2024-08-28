@@ -24,6 +24,7 @@ import com.wechat.pay.java.core.notification.RequestParam;
 import com.wechat.pay.java.service.payments.jsapi.JsapiServiceExtension;
 import com.wechat.pay.java.service.payments.jsapi.model.*;
 import com.wechat.pay.java.service.payments.model.Transaction;
+import io.seata.spring.annotation.GlobalTransactional;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -89,14 +90,17 @@ public class WxPayServiceImpl implements WxPayService {
             settleInfo.setProfitSharing(true);
             request.setSettleInfo(settleInfo);
 
+
             // 4.调用微信支付使用对象里面方法实现微信支付调用
-            PrepayWithRequestPaymentResponse response = service.prepayWithRequestPayment(request);
+            // TODO 个人无法开通微信支付，只有公司或商业版才可以使用
+            // PrepayWithRequestPaymentResponse response = service.prepayWithRequestPayment(request);
             // 5.根据返回结果，封装到WxPrepayVo里面
             WxPrepayVo wxPrepayVo = new WxPrepayVo();
-            BeanUtils.copyProperties(response, wxPrepayVo);
-            wxPrepayVo.setTimeStamp(response.getTimeStamp());
+            // BeanUtils.copyProperties(response, wxPrepayVo);
+            // wxPrepayVo.setTimeStamp(response.getTimeStamp());
             return wxPrepayVo;
         } catch (BeansException e) {
+            // TODO 个人无法开通微信支付，只有公司或商业版才可以使用
             throw new GuiguException(ResultCodeEnum.DATA_ERROR);
         }
     }
@@ -111,15 +115,20 @@ public class WxPayServiceImpl implements WxPayService {
         queryRequest.setOutTradeNo(orderNo);
 
         // 3.调用微信操作对象里面方法实现查询操作
-        Transaction transaction = service.queryOrderByOutTradeNo(queryRequest);
-
+        // TODO 个人无法开通微信支付，只有公司或商业版才可以使用
+        // Transaction transaction = service.queryOrderByOutTradeNo(queryRequest);
+        Transaction transaction = new Transaction();
+        transaction.setTradeState(Transaction.TradeStateEnum.SUCCESS);
         // 4.查询返回结果，根据结果判断
         if (transaction != null && transaction.getTradeState() == Transaction.TradeStateEnum.SUCCESS) {
             // 5.如果支付成功，调用其他方法实现支付后处理逻辑
             this.handlePayment(transaction);
             return true;
         }
-        return false;
+        // TODO 个人无法开通微信支付，只有公司或商业版才可以使用
+        // return false;
+        this.handlePayment(transaction);
+        return true;
     }
 
     // 微信支付成功后，进行的回调
@@ -156,6 +165,7 @@ public class WxPayServiceImpl implements WxPayService {
     }
 
     // 支付成功后续处理
+    @GlobalTransactional
     @Override
     public void handleOrder(String orderNo) {
         // 1.远程调用：更新订单状态：已经支付
@@ -178,23 +188,25 @@ public class WxPayServiceImpl implements WxPayService {
     public void handlePayment(Transaction transaction) {
         // 1.更新支付记录，状态修改为已经支付
         // 订单编号
-        String orderNo = transaction.getOutTradeNo();
-
-        // 根据订单编号查询支付记录
-        LambdaQueryWrapper<PaymentInfo> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(PaymentInfo::getOrderNo, orderNo);
-        PaymentInfo paymentInfo = paymentInfoMapper.selectOne(wrapper);
-        if (paymentInfo.getPaymentStatus() == 1) {
-            return;
-        }
-        paymentInfo.setPaymentStatus(1);
-        paymentInfo.setOrderNo(transaction.getOutTradeNo());
-        paymentInfo.setTransactionId(transaction.getTransactionId());
-        paymentInfo.setCallbackTime(new Date());
-        paymentInfo.setCallbackContent(JSON.toJSONString(transaction));
-        paymentInfoMapper.updateById(paymentInfo);
-        // 2.发送mq消息，传递订单编号
-        // 接收端：获取订单编号，完成后续处理
-        rabbitService.sendMessage(MqConst.EXCHANGE_ORDER, MqConst.ROUTING_PAY_SUCCESS, orderNo);
+        return;
+        // TODO 个人无法开通微信支付，只有公司或商业版才可以使用
+        // String orderNo = transaction.getOutTradeNo();
+        //
+        // // 根据订单编号查询支付记录
+        // LambdaQueryWrapper<PaymentInfo> wrapper = new LambdaQueryWrapper<>();
+        // wrapper.eq(PaymentInfo::getOrderNo, orderNo);
+        // PaymentInfo paymentInfo = paymentInfoMapper.selectOne(wrapper);
+        // if (paymentInfo.getPaymentStatus() == 1) {
+        //     return;
+        // }
+        // paymentInfo.setPaymentStatus(1);
+        // paymentInfo.setOrderNo(transaction.getOutTradeNo());
+        // paymentInfo.setTransactionId(transaction.getTransactionId());
+        // paymentInfo.setCallbackTime(new Date());
+        // paymentInfo.setCallbackContent(JSON.toJSONString(transaction));
+        // paymentInfoMapper.updateById(paymentInfo);
+        // // 2.发送mq消息，传递订单编号
+        // // 接收端：获取订单编号，完成后续处理
+        // rabbitService.sendMessage(MqConst.EXCHANGE_ORDER, MqConst.ROUTING_PAY_SUCCESS, orderNo);
     }
 }

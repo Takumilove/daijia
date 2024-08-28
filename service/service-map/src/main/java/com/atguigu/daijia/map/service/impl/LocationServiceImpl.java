@@ -207,7 +207,7 @@ public class LocationServiceImpl implements LocationService {
         }
         // TODO 为了测试，暂时返回一个固定值
         if (realDistance == 0) {
-            return orderInfoFeignClient.getOrderInfo(orderId).getData().getExpectDistance().add(new BigDecimal(5));
+            return orderInfoFeignClient.getOrderInfo(orderId).getData().getExpectDistance().add(new BigDecimal(1));
         }
         // 3.返回总距离
         return new BigDecimal(realDistance);

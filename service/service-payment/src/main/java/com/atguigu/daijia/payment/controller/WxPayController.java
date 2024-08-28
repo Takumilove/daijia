@@ -24,7 +24,7 @@ public class WxPayController {
     private final WxPayService wxPayService;
 
     @Operation(summary = "创建微信支付")
-    @PostMapping("/createJsapi")
+    @PostMapping("/createWxPayment")
     public Result<WxPrepayVo> createWxPayment(@RequestBody PaymentInfoForm paymentInfoForm) {
         return Result.ok(wxPayService.createWxPayment(paymentInfoForm));
     }

@@ -46,7 +46,7 @@ public class NewOrderServiceImpl implements NewOrderService {
         // 2.没有启动，进行操作
         if (orderJob == null) {
             // 创建并启动任务调度
-            Long jobId = xxlJobClient.addAndStart("newOrderTaskHandler", "", "0 0/1 * * * ?",
+            Long jobId = xxlJobClient.addAndStart("newOrderTaskHandler", "", "*/10 * * * * ?",
                                                   "新创建订单任务调度：" + newOrderTaskVo.getOrderId());
             // 记录任务调度信息
             orderJob = new OrderJob();
