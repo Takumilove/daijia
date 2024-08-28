@@ -111,20 +111,22 @@ public class CouponInfoServiceImpl extends ServiceImpl<CouponInfoMapper, CouponI
         return true;
     }
 
+    // 获取未使用的最佳优惠卷信息
     @Override
     public List<AvailableCouponVo> findAvailableCoupon(Long customerId, BigDecimal orderAmount) {
+        // 1 创建list集合，存储最终返回数据
         List<AvailableCouponVo> availableCouponVoList = new ArrayList<>();
 
         // 2 根据乘客id，获取乘客已经领取但是没有使用的优惠卷列表
         // 返回list集合
+        List<NoUseCouponVo> list = couponInfoMapper.findNoUseList(customerId);
 
         // 3.遍历乘客未使用优惠卷列表，得到每个优惠卷
         // 3.1判断优惠卷类型：现金卷和折扣卷
-        List<NoUseCouponVo> list = couponInfoMapper.findNoUseList(customerId);
         // 3.2现金卷
-        // 判断现金卷使用门槛
         List<NoUseCouponVo> typeList = list.stream().filter(item -> item.getCouponType() == 1)
                                            .collect(Collectors.toList());
+        // 判断现金卷使用门槛
         for (NoUseCouponVo noUseCouponVo : typeList) {
             // 判断使用门槛
             // 减免金额
