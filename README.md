@@ -91,6 +91,8 @@ CompletableFuture是java.util.concurrent包里面类
 
 
 * 其他
+![476ca3d4-59be-40ac-be08-5a918fdf7a83](https://github.com/user-attachments/assets/7e6f9402-9bcb-49af-b73b-de07b7250fde)
+![b02e7f43-f115-496e-876f-f543ecf014cd](https://github.com/user-attachments/assets/8fc9d523-7867-41a8-b1c4-4466f10a5a0e)
 
 
 
