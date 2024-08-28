@@ -93,4 +93,11 @@ public class CustomerServiceImpl implements CustomerService {
         return customerLoginVo;
     }
 
+    // 更新用户微信手机号
+    @Override
+    public Boolean updateWxPhoneNumber(UpdateWxPhoneForm updateWxPhoneForm) {
+        // Result<Boolean> booleanResult = customerInfoFeignClient.updateWxPhoneNumber(updateWxPhoneForm);
+        return true;
+    }
+
 }

@@ -52,8 +52,10 @@ public class LocationServiceImpl implements LocationService {
     // 更新司机位置信息
     @Override
     public Boolean updateDriverLocation(UpdateDriverLocationForm updateDriverLocationForm) {
+        // 把司机位置信息添加redis里面geo
         Point point = new Point(updateDriverLocationForm.getLongitude().doubleValue(),
                                 updateDriverLocationForm.getLatitude().doubleValue());
+        // 添加到redis里面
         redisTemplate.opsForGeo()
                      .add(RedisConstant.DRIVER_GEO_LOCATION, point, updateDriverLocationForm.getDriverId().toString());
         return true;
@@ -126,6 +128,7 @@ public class LocationServiceImpl implements LocationService {
         return list;
     }
 
+    // 司机赶往代驾起始点：更新订单地址到缓存
     @Override
     public Boolean updateOrderLocationToCache(UpdateOrderLocationForm updateOrderLocationForm) {
         OrderLocationVo orderLocationVo = new OrderLocationVo();
@@ -154,6 +157,7 @@ public class LocationServiceImpl implements LocationService {
             orderServiceLocation.setCreateTime(new Date());
             list.add(orderServiceLocation);
         });
+        // 批量添加到MongoDB
         orderServiceLocationRepository.saveAll(list);
         return true;
     }
@@ -161,6 +165,9 @@ public class LocationServiceImpl implements LocationService {
     @Override
     public OrderServiceLastLocationVo getOrderServiceLastLocation(Long orderId) {
         // 查询MongoDB
+        // 查询条件 ：orderId
+        // 根据创建时间降序排列
+        // 最新一条数据
         Query query = new Query();
         query.addCriteria(Criteria.where("orderId").is(orderId));
         query.with(Sort.by(Sort.Order.desc("createTime")));

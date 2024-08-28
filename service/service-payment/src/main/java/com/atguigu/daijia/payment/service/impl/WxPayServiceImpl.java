@@ -1,7 +1,5 @@
 package com.atguigu.daijia.payment.service.impl;
 
-import com.alibaba.fastjson.JSON;
-import com.atguigu.daijia.common.constant.MqConst;
 import com.atguigu.daijia.common.execption.GuiguException;
 import com.atguigu.daijia.common.result.ResultCodeEnum;
 import com.atguigu.daijia.common.service.RabbitService;
@@ -31,8 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.stereotype.Service;
-
-import java.util.Date;
 
 @Service
 @Slf4j
@@ -105,6 +101,7 @@ public class WxPayServiceImpl implements WxPayService {
         }
     }
 
+    // 查询支付状态
     @Override
     public Boolean queryPayStatus(String orderNo) {
         // 1.创建微信操作对象

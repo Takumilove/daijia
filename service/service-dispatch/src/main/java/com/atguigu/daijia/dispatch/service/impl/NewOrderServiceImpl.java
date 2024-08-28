@@ -122,6 +122,7 @@ public class NewOrderServiceImpl implements NewOrderService {
         });
     }
 
+    // 获取最新订单
     @Override
     public List<NewOrderDataVo> findNewOrderQueueData(Long driverId) {
         List<NewOrderDataVo> list = new ArrayList<>();
@@ -137,6 +138,7 @@ public class NewOrderServiceImpl implements NewOrderService {
         return list;
     }
 
+    // 清空队列数据
     @Override
     public Boolean clearNewOrderQueueData(Long driverId) {
         String key = RedisConstant.DRIVER_ORDER_TEMP_LIST + driverId;

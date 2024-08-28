@@ -84,6 +84,7 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
         return customerLoginVo;
     }
 
+    // 更新用户微信手机号
     @Override
     public Boolean updateWxPhoneNumber(UpdateWxPhoneForm updateWxPhoneForm) {
         // 1.根据code值获取微信绑定手机号码

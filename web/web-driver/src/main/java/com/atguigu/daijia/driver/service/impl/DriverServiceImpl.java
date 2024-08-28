@@ -30,6 +30,7 @@ public class DriverServiceImpl implements DriverService {
     private final LocationFeignClient locationFeignClient;
     private final NewOrderFeignClient newOrderFeignClient;
 
+    //登录
     @Override
     public String login(String code) {
         // 远程调用
@@ -48,6 +49,7 @@ public class DriverServiceImpl implements DriverService {
         return token;
     }
 
+    //司机认证信息
     @Override
     public DriverLoginVo getDriverLoginInfo(Long driverId) {
         return driverInfoFeignClient.getDriverLoginInfo(driverId).getData();
@@ -65,6 +67,7 @@ public class DriverServiceImpl implements DriverService {
         return driverInfoFeignClient.UpdateDriverAuthInfo(updateDriverAuthInfoForm).getData();
     }
 
+    //创建司机人脸模型
     @Override
     public Boolean creatDriverFaceModel(DriverFaceModelForm driverFaceModelForm) {
         return driverInfoFeignClient.creatDriverFaceModel(driverFaceModelForm).getData();
@@ -104,6 +107,7 @@ public class DriverServiceImpl implements DriverService {
         return true;
     }
 
+    //停止接单服务
     @Override
     public Boolean stopService(Long driverId) {
         // 1.更新订单状态0停止接单

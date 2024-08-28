@@ -24,6 +24,7 @@ public class ProfitsharingRuleServiceImpl implements ProfitsharingRuleService {
     @Override
     public ProfitsharingRuleResponseVo calculateOrderProfitsharingFee(
             ProfitsharingRuleRequestForm profitsharingRuleRequestForm) {
+        // 传入参数对象封装
         ProfitsharingRuleRequest profitsharingRuleRequest = new ProfitsharingRuleRequest();
         profitsharingRuleRequest.setOrderAmount(profitsharingRuleRequestForm.getOrderAmount());
         profitsharingRuleRequest.setOrderNum(profitsharingRuleRequestForm.getOrderNum());

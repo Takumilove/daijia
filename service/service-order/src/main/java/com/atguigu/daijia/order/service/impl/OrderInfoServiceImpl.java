@@ -50,6 +50,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     // 乘客下单
     @Override
     public Long saveOrderInfo(OrderInfoForm orderInfoForm) {
+        // order_info添加订单数据
         OrderInfo orderInfo = new OrderInfo();
         BeanUtils.copyProperties(orderInfoForm, orderInfo);
         // 订单号
@@ -71,6 +72,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         return orderInfo.getId();
     }
 
+    // 生成订单之后，发送延迟消息
     private void sendDelayMessage(Long orderId) {
         try {
             // 1.创建队列
@@ -95,6 +97,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(OrderInfo::getId, orderId);
         wrapper.select(OrderInfo::getStatus);
+        // 调用mapper方法
         OrderInfo orderInfo = orderInfoMapper.selectOne(wrapper);
         // 订单不存在
         if (orderInfo == null) {
@@ -124,23 +127,30 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
                     // 抢单失败
                     throw new GuiguException(ResultCodeEnum.COB_NEW_ORDER_FAIL);
                 }
-                // 修改订单表状态值为2：已经接单
+                // 司机抢单
+                // 修改order_info表订单状态值2：已经接单 + 司机id + 司机接单时间
+                // 修改条件：根据订单id
                 LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
                 wrapper.eq(OrderInfo::getId, orderId);
                 OrderInfo orderInfo = orderInfoMapper.selectOne(wrapper);
+                // 设置
                 orderInfo.setStatus(OrderStatus.ACCEPTED.getStatus());
                 orderInfo.setDriverId(driverId);
                 orderInfo.setAcceptTime(new Date());
+                // 调用方法修改
                 int rows = orderInfoMapper.updateById(orderInfo);
                 if (rows != 1) {
+                    // 抢单失败
                     throw new GuiguException(ResultCodeEnum.COB_NEW_ORDER_FAIL);
                 }
                 // 删除Redis中的标示
                 redisTemplate.delete(redisKey);
             }
         } catch (Exception e) {
+            // 抢单失败
             throw new GuiguException(ResultCodeEnum.COB_NEW_ORDER_FAIL);
         } finally {
+            // 释放
             if (lock.isLocked()) {
                 lock.unlock();
             }
@@ -148,19 +158,24 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         return true;
     }
 
+    // 乘客端查找当前订单
     @Override
     public CurrentOrderInfoVo searchCustomerCurrentOrder(Long customerId) {
+        // 封装条件
+        // 乘客id
         LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(OrderInfo::getCustomerId, customerId);
+        // 各种状态
         Integer[] statusArray = {OrderStatus.ACCEPTED.getStatus(), OrderStatus.DRIVER_ARRIVED.getStatus(),
                                  OrderStatus.UPDATE_CART_INFO.getStatus(), OrderStatus.START_SERVICE.getStatus(),
                                  OrderStatus.END_SERVICE.getStatus(), OrderStatus.UNPAID.getStatus()};
         wrapper.in(OrderInfo::getStatus, statusArray);
-
+        // 获取最新一条记录
         wrapper.orderByDesc(OrderInfo::getId);
         wrapper.last("limit 1");
-
+        // 调用方法
         OrderInfo orderInfo = orderInfoMapper.selectOne(wrapper);
+        // 封装到CurrentOrderInfoVo
         CurrentOrderInfoVo currentOrderInfoVo = new CurrentOrderInfoVo();
         if (orderInfo != null) {
             currentOrderInfoVo.setOrderId(orderInfo.getId());
@@ -172,8 +187,10 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         return currentOrderInfoVo;
     }
 
+    // 司机端查找当前订单
     @Override
     public CurrentOrderInfoVo searchDriverCurrentOrder(Long driverId) {
+        // 封装条件
         LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(OrderInfo::getDriverId, driverId);
         Integer[] statusArray = {OrderStatus.ACCEPTED.getStatus(), OrderStatus.DRIVER_ARRIVED.getStatus(),
@@ -195,6 +212,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         return currentOrderInfoVo;
     }
 
+    // 司机到达起始点
     @Override
     public Boolean driverArriveStartLocation(Long orderId, Long driverId) {
         // 更新订单状态和到达时间，条件：orderId+driverId
@@ -231,6 +249,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         return true;
     }
 
+    // 开始代驾服务
     @Override
     public Boolean startDriver(StartDriveForm startDriveForm) {
         // 根据订单id+司机id 更新订单状态和开始代驾时间
@@ -259,6 +278,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
 
     @Override
     public Long getOrderNumByTime(String startTime, String endTime) {
+        // 09 <= time < 10   <= time1  <    11
         LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
         wrapper.ge(OrderInfo::getStartServiceTime, startTime);
         wrapper.lt(OrderInfo::getStartServiceTime, endTime);
@@ -267,6 +287,8 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
 
     @Override
     public Boolean endDrive(UpdateOrderBillForm updateOrderBillForm) {
+        // 1 更新订单信息
+        // update order_info set ..... where id=? and driver_id=?
         LambdaQueryWrapper<OrderInfo> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(OrderInfo::getId, updateOrderBillForm.getOrderId());
         wrapper.eq(OrderInfo::getDriverId, updateOrderBillForm.getDriverId());
@@ -297,6 +319,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         return true;
     }
 
+    // 获取乘客订单分页列表
     @Override
     public PageVo findCustomerOrderPage(Page<OrderInfo> pageParam, Long customerId) {
         IPage<OrderListVo> pageInfo = orderInfoMapper.selectCustomerOrderPage(pageParam, customerId);
@@ -401,6 +424,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         return orderRewardVo;
     }
 
+    // 调用方法取消订单
     @Override
     public void orderCancel(long orderId) {
         // orderId查询订单信息

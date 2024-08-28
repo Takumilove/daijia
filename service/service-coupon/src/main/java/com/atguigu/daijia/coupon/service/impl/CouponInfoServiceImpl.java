@@ -168,7 +168,7 @@ public class CouponInfoServiceImpl extends ServiceImpl<CouponInfoMapper, CouponI
         }
         return availableCouponVoList;
     }
-
+    // 使用优惠卷
     @Override
     public BigDecimal useCoupon(UseCouponForm useCouponForm) {
         // 1.根据乘客优惠卷id获取乘客优惠卷信息

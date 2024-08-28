@@ -206,11 +206,14 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         // 根据司机id+当日日期进行查询
         LambdaQueryWrapper<DriverFaceRecognition> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(DriverFaceRecognition::getDriverId, driverId);
+        // 年-月-日 格式
         wrapper.eq(DriverFaceRecognition::getFaceDate, new DateTime().toString("yyyy-MM-dd"));
+        // 调用mapper方法
         Long count = driverFaceRecognitionMapper.selectCount(wrapper);
         return count != 0;
     }
 
+    // 人脸识别
     @Override
     public Boolean verifyDriverFace(DriverFaceModelForm driverFaceModelForm) {
         // 1.照片对比
@@ -256,7 +259,8 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         throw new GuiguException(ResultCodeEnum.DATA_ERROR);
     }
 
-
+    // 更新接单状态
+    // update driver_set set status=? where driver_id=?
     @Override
     public Boolean updateServiceStatus(Long driverId, Integer status) {
         LambdaQueryWrapper<DriverSet> wrapper = new LambdaQueryWrapper<>();
@@ -267,13 +271,18 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         return true;
     }
 
+    // 获取司机基本信息
     @Override
     public DriverInfoVo getDriverInfoOrder(Long driverId) {
+        // 司机id获取基本信息
         DriverInfo driverInfo = driverInfoMapper.selectById(driverId);
+        // 封装DriverInfoVo
         DriverInfoVo driverInfoVo = new DriverInfoVo();
         BeanUtils.copyProperties(driverInfo, driverInfoVo);
         // 计算驾龄
+        // 获取当前年
         int currentYear = new DateTime().getYear();
+        // 获取驾驶证初次领证日期
         int firstYear = new DateTime(driverInfo.getDriverLicenseIssueDate()).getYear();
         int driverLicenseAge = currentYear - firstYear;
         driverInfoVo.setDriverLicenseAge(driverLicenseAge);

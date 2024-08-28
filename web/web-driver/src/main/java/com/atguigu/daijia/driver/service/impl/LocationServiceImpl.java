@@ -26,6 +26,7 @@ public class LocationServiceImpl implements LocationService {
     // 更新司机经纬度位置
     @Override
     public Boolean updateDriverLocation(UpdateDriverLocationForm updateDriverLocationForm) {
+        // 开启接单了才能更新司机接单位置
         DriverSet driverSet = driverInfoFeignClient.getDriverSet(updateDriverLocationForm.getDriverId()).getData();
 
         if (driverSet.getServiceStatus() == 1) {

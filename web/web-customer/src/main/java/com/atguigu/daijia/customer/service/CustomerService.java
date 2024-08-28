@@ -5,7 +5,7 @@ import com.atguigu.daijia.model.vo.customer.CustomerLoginVo;
 
 public interface CustomerService {
 
-
+    // 微信登录
     String login(String code);
 
     // 获取用户登录信息
@@ -13,5 +13,8 @@ public interface CustomerService {
 
     // 获取用户登录信息
     CustomerLoginVo getCustomerInfo(Long customerId);
+
+    // 更新用户微信手机号
+    Boolean updateWxPhoneNumber(UpdateWxPhoneForm updateWxPhoneForm);
 
 }

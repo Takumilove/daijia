@@ -23,6 +23,7 @@ public interface OrderInfoService extends IService<OrderInfo> {
     // 司机抢单
     Boolean robNewOrder(Long driverId, Long orderId);
 
+    // 乘客端查找当前订单
     CurrentOrderInfoVo searchCustomerCurrentOrder(Long customerId);
 
     CurrentOrderInfoVo searchDriverCurrentOrder(Long driverId);
@@ -37,6 +38,7 @@ public interface OrderInfoService extends IService<OrderInfo> {
 
     Boolean endDrive(UpdateOrderBillForm updateOrderBillForm);
 
+    // 获取乘客订单分页列表
     PageVo findCustomerOrderPage(Page<OrderInfo> pageParam, Long customerId);
 
     PageVo findDriverOrderPage(Page<OrderInfo> pageParam, Long driverId);
@@ -53,6 +55,7 @@ public interface OrderInfoService extends IService<OrderInfo> {
 
     OrderRewardVo getOrderRewardFee(String orderNo);
 
+    // 调用方法取消订单
     void orderCancel(long l);
 
     Boolean updateCouponAmount(Long orderId, BigDecimal couponAmount);

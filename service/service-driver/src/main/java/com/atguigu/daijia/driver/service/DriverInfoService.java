@@ -37,6 +37,7 @@ public interface DriverInfoService extends IService<DriverInfo> {
     // 更新接单状态
     Boolean updateServiceStatus(Long driverId, Integer status);
 
+    // 获取司机基本信息
     DriverInfoVo getDriverInfoOrder(Long driverId);
 
     String getDriverOpenId(Long driverId);
