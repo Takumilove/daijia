@@ -121,7 +121,8 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         try {
             boolean flag = lock.tryLock(RedisConstant.ROB_NEW_ORDER_LOCK_WAIT_TIME,
                                         RedisConstant.ROB_NEW_ORDER_LOCK_LEASE_TIME,
-                                        TimeUnit.SECONDS);            // 司机抢单
+                                        TimeUnit.SECONDS);
+            // 司机抢单
             if (flag) {
                 if (!redisTemplate.hasKey(redisKey)) {
                     // 抢单失败
@@ -436,7 +437,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             int rows = orderInfoMapper.updateById(orderInfo);
             if (rows == 1) {
                 // 删除接单标识
-                redisTemplate.delete(RedisConstant.ORDER_ACCEPT_MARK);
+                redisTemplate.delete(RedisConstant.ORDER_ACCEPT_MARK + orderId);
             }
         }
     }
@@ -451,7 +452,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     public Boolean robNewOrder1(Long driverId, Long orderId) {
         // 判断订单是否存在，通过Redis，减少数据库压力
         String redisKey = RedisConstant.ORDER_ACCEPT_MARK + orderId;
-        if (Boolean.FALSE.equals(redisTemplate.hasKey(redisKey))) {
+        if (!redisTemplate.hasKey(redisKey)) {
             // 抢单失败
             throw new GuiguException(ResultCodeEnum.COB_NEW_ORDER_FAIL);
         }

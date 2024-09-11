@@ -98,7 +98,7 @@ public class DriverServiceImpl implements DriverService {
         if (!isFace) {
             throw new GuiguException(ResultCodeEnum.FACE_ERROR);
         }
-        // 3.更新订单状态1开始接单
+        // 3.更新订单状态开始接单
         driverInfoFeignClient.updateServiceStatus(driverId, 1);
         // 4.删除redis司机位置信息
         locationFeignClient.removeDriverLocation(driverId);
